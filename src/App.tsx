@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Students from "./pages/Students";
+import StudentProfile from "./pages/StudentProfile";
 import NotFound from "./pages/NotFound";
+import { AuthGuard } from "./components/auth/AuthGuard";
 
 const queryClient = new QueryClient();
 
@@ -17,10 +19,10 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<AuthGuard><Dashboard /></AuthGuard>} />
           <Route path="/auth" element={<Auth />} />
-          <Route path="/students" element={<Students />} />
-          <Route path="/students/:id" element={<Students />} />
+          <Route path="/students" element={<AuthGuard><Students /></AuthGuard>} />
+          <Route path="/students/:id" element={<AuthGuard><StudentProfile /></AuthGuard>} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
