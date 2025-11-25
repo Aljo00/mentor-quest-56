@@ -31,6 +31,14 @@ export default {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
         muted: {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
@@ -46,6 +54,14 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        status: {
+          "not-started": "hsl(var(--status-not-started))",
+          "in-progress": "hsl(var(--status-in-progress))",
+          "store-ready": "hsl(var(--status-store-ready))",
+          selling: "hsl(var(--status-selling))",
+          scaling: "hsl(var(--status-scaling))",
+          completed: "hsl(var(--status-completed))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
