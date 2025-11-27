@@ -2,13 +2,15 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, User } from "lucide-react";
 
 interface StatusHistory {
   id: string;
   old_status: string | null;
   new_status: string;
   changed_at: string;
+  changed_by: string;
+  user_email?: string;
 }
 
 interface StudentStatusHistoryProps {
@@ -27,10 +29,10 @@ const statusLabels: Record<string, string> = {
 const statusColors: Record<string, string> = {
   not_started: "bg-muted text-muted-foreground",
   website_work_started: "bg-blue-500/10 text-blue-500",
-  store_ready: "bg-purple-500/10 text-purple-500",
-  started_selling: "bg-amber-500/10 text-amber-500",
-  scaling: "bg-green-500/10 text-green-500",
-  completed: "bg-emerald-500/10 text-emerald-500",
+  store_ready: "bg-primary/10 text-primary",
+  started_selling: "bg-primary/20 text-primary",
+  scaling: "bg-purple-500/10 text-purple-500",
+  completed: "bg-success/10 text-success",
 };
 
 export const StudentStatusHistory = ({ studentId }: StudentStatusHistoryProps) => {
@@ -38,18 +40,62 @@ export const StudentStatusHistory = ({ studentId }: StudentStatusHistoryProps) =
 
   useEffect(() => {
     const fetchHistory = async () => {
-      const { data, error } = await supabase
+      const { data: historyData, error: historyError } = await supabase
         .from("status_history")
         .select("*")
         .eq("student_id", studentId)
         .order("changed_at", { ascending: false });
 
-      if (!error && data) {
-        setHistory(data);
+      if (historyError) {
+        console.error("Error fetching history:", historyError);
+        return;
+      }
+
+      // Fetch user emails for each history entry
+      if (historyData && historyData.length > 0) {
+        const userIds = [...new Set(historyData.map(h => h.changed_by))];
+        
+        // Try to get user info from auth
+        const { data: { users } } = await supabase.auth.admin.listUsers();
+        
+        const emailMap: Record<string, string> = {};
+        if (users) {
+          users.forEach((user: { id: string; email?: string }) => {
+            emailMap[user.id] = user.email || 'Unknown';
+          });
+        }
+
+        const enrichedHistory = historyData.map(h => ({
+          ...h,
+          user_email: emailMap[h.changed_by] || 'Unknown User'
+        }));
+
+        setHistory(enrichedHistory);
       }
     };
 
     fetchHistory();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel(`status_history_${studentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'status_history',
+          filter: `student_id=eq.${studentId}`,
+        },
+        () => {
+          fetchHistory();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [studentId]);
 
   if (history.length === 0) {
@@ -84,9 +130,12 @@ export const StudentStatusHistory = ({ studentId }: StudentStatusHistoryProps) =
                     {statusLabels[item.new_status]}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(item.changed_at).toLocaleString()}
-                </p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <User className="h-3 w-3" />
+                  <span>{item.user_email}</span>
+                  <span>•</span>
+                  <span>{new Date(item.changed_at).toLocaleString()}</span>
+                </div>
               </div>
             </div>
           ))}

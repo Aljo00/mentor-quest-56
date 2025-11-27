@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Plus,
   LogOut,
+  ListChecks,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -146,10 +147,16 @@ const Dashboard = () => {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold text-foreground">Student Management</h1>
-              <Button variant="ghost" onClick={handleLogout}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Logout
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" onClick={() => navigate("/students")}>
+                  <ListChecks className="h-4 w-4 mr-2" />
+                  All Students
+                </Button>
+                <Button variant="ghost" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Logout
+                </Button>
+              </div>
             </div>
           </div>
         </header>
