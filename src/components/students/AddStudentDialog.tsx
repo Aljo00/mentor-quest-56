@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,9 +15,7 @@ const studentSchema = z.object({
   phone: z.string().trim().min(1, "Phone is required").max(20),
   email: z.string().trim().email("Invalid email").max(255).optional().or(z.literal("")),
   address: z.string().trim().max(500).optional(),
-  plan_name: z.string().trim().min(1, "Plan name is required").max(100),
-  plan_amount: z.number().min(0, "Amount must be positive"),
-  batch: z.string().trim().max(50).optional(),
+  plan_name: z.string().trim().min(1, "Plan is required").max(100),
 });
 
 type StudentFormData = z.infer<typeof studentSchema>;
@@ -30,14 +29,18 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   
-  const [formData, setFormData] = useState<Partial<StudentFormData>>({
+  const planOptions = [
+    { name: "Learning Pack", amount: 2999 },
+    { name: "Starter Kit", amount: 6999 },
+    { name: "Branded DS", amount: 7999 },
+  ];
+  
+  const [formData, setFormData] = useState({
     full_name: "",
     phone: "",
     email: "",
     address: "",
     plan_name: "",
-    plan_amount: 0,
-    batch: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -49,8 +52,12 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
         ...formData,
         email: formData.email || undefined,
         address: formData.address || undefined,
-        batch: formData.batch || undefined,
       });
+      
+      const selectedPlan = planOptions.find(p => p.name === validated.plan_name);
+      if (!selectedPlan) {
+        throw new Error("Invalid plan selected");
+      }
 
       const { error } = await supabase.from("students").insert([{
         full_name: validated.full_name,
@@ -58,8 +65,8 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
         email: validated.email || null,
         address: validated.address || null,
         plan_name: validated.plan_name,
-        plan_amount: validated.plan_amount,
-        batch: validated.batch || null,
+        plan_amount: selectedPlan.amount,
+        batch: null,
       }]);
 
       if (error) throw error;
@@ -76,8 +83,6 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
         email: "",
         address: "",
         plan_name: "",
-        plan_amount: 0,
-        batch: "",
       });
       
       onStudentAdded?.();
@@ -156,34 +161,23 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="plan_name">Plan Name *</Label>
-              <Input
-                id="plan_name"
-                value={formData.plan_name}
-                onChange={(e) => setFormData({ ...formData, plan_name: e.target.value })}
-                required
-              />
+              <Label htmlFor="plan_name">Select Plan *</Label>
+              <Select 
+                value={formData.plan_name} 
+                onValueChange={(value) => setFormData({ ...formData, plan_name: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  {planOptions.map((plan) => (
+                    <SelectItem key={plan.name} value={plan.name}>
+                      {plan.name} - ₹{plan.amount.toLocaleString()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="plan_amount">Plan Amount (₹) *</Label>
-              <Input
-                id="plan_amount"
-                type="number"
-                value={formData.plan_amount}
-                onChange={(e) => setFormData({ ...formData, plan_amount: Number(e.target.value) })}
-                required
-                min="0"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="batch">Batch</Label>
-            <Input
-              id="batch"
-              value={formData.batch}
-              onChange={(e) => setFormData({ ...formData, batch: e.target.value })}
-            />
           </div>
 
           <div className="flex justify-end gap-2 pt-4">

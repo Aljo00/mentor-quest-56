@@ -55,13 +55,6 @@ export const StudentBasicInfo = ({ student }: StudentBasicInfoProps) => {
           <p className="text-sm text-muted-foreground">₹{student.plan_amount.toLocaleString()}</p>
         </div>
         
-        {student.batch && (
-          <div className="pt-2">
-            <p className="text-sm font-medium mb-1">Batch</p>
-            <Badge variant="outline">{student.batch}</Badge>
-          </div>
-        )}
-        
         {student.tags && student.tags.length > 0 && (
           <div className="pt-2">
             <div className="flex items-center gap-2 mb-2">

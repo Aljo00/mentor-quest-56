@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AddStudentDialog } from "@/components/students/AddStudentDialog";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Home, Download } from "lucide-react";
 
 interface Student {
   id: string;
@@ -86,12 +87,58 @@ export default function Students() {
     );
   }
 
+  const handleExport = (format: 'csv' | 'json') => {
+    const dataToExport = filteredStudents.map(s => ({
+      Name: s.full_name,
+      Phone: s.phone,
+      Plan: s.plan_name,
+      Amount: s.plan_amount,
+      Status: statusLabels[s.current_status],
+      'Joining Date': new Date(s.joining_date).toLocaleDateString()
+    }));
+
+    if (format === 'csv') {
+      const headers = Object.keys(dataToExport[0] || {}).join(',');
+      const rows = dataToExport.map(row => Object.values(row).join(','));
+      const csv = [headers, ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+    } else {
+      const json = JSON.stringify(dataToExport, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `students_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-          <h1 className="text-3xl font-bold">Students</h1>
-          <AddStudentDialog onStudentAdded={fetchStudents} />
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+              <Home className="h-5 w-5" />
+            </Button>
+            <h1 className="text-3xl font-bold">Students</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => handleExport('csv')}>
+              <Download className="h-4 w-4 mr-2" />
+              Export CSV
+            </Button>
+            <Button variant="outline" onClick={() => handleExport('json')}>
+              <Download className="h-4 w-4 mr-2" />
+              Export JSON
+            </Button>
+            <AddStudentDialog onStudentAdded={fetchStudents} />
+          </div>
         </div>
 
         <div className="relative mb-6">

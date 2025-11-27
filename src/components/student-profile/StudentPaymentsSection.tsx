@@ -6,15 +6,20 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, DollarSign } from "lucide-react";
+import { Plus, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { z } from "zod";
 
 const paymentSchema = z.object({
   amount: z.number().min(1, "Amount must be greater than 0"),
   method: z.string().min(1, "Payment method is required"),
   note: z.string().max(500).optional(),
+  due_date: z.date().optional(),
 });
 
 interface Payment {
@@ -34,6 +39,7 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
   const [payments, setPayments] = useState<Payment[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [dueDate, setDueDate] = useState<Date>();
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -69,6 +75,7 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
       const validated = paymentSchema.parse({
         ...formData,
         note: formData.note || undefined,
+        due_date: dueDate,
       });
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -91,6 +98,7 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
 
       setOpen(false);
       setFormData({ amount: 0, method: "", note: "" });
+      setDueDate(undefined);
       fetchPayments();
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -155,6 +163,39 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
                 </Select>
               </div>
 
+              {amountDue - formData.amount > 0 && (
+                <div className="space-y-2">
+                  <Label>Due Date for Remaining Amount</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !dueDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={dueDate}
+                        onSelect={setDueDate}
+                        initialFocus
+                        disabled={(date) => date < new Date()}
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-xs text-muted-foreground">
+                    Remaining: ₹{(amountDue - formData.amount).toLocaleString()}
+                  </p>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="note">Note</Label>
                 <Textarea
@@ -185,11 +226,11 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-1">Total Paid</p>
-            <p className="text-lg font-semibold text-green-600">₹{totalPaid.toLocaleString()}</p>
+            <p className="text-lg font-semibold text-success">₹{totalPaid.toLocaleString()}</p>
           </div>
           <div>
             <p className="text-xs text-muted-foreground mb-1">Amount Due</p>
-            <p className="text-lg font-semibold text-amber-600">₹{amountDue.toLocaleString()}</p>
+            <p className="text-lg font-semibold text-warning">₹{amountDue.toLocaleString()}</p>
           </div>
         </div>
 

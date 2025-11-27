@@ -51,6 +51,10 @@ export const StudentStatusSection = ({ student, onStatusUpdated }: StudentStatus
 
       if (error) throw error;
 
+      // Update local state without full page refresh
+      student.current_status = newStatus;
+      setNewStatus(newStatus);
+
       toast({
         title: "Success",
         description: "Status updated successfully",
