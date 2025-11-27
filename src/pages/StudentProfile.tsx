@@ -10,7 +10,7 @@ import { StudentStatusSection } from "@/components/student-profile/StudentStatus
 import { StudentPaymentsSection } from "@/components/student-profile/StudentPaymentsSection";
 import { StudentFollowUpsSection } from "@/components/student-profile/StudentFollowUpsSection";
 import { StudentTasksSection } from "@/components/student-profile/StudentTasksSection";
-import { StudentStatusHistory } from "@/components/student-profile/StudentStatusHistory";
+import { StudentAuditLog } from "@/components/student-profile/StudentAuditLog";
 
 interface Student {
   id: string;
@@ -48,6 +48,12 @@ export default function StudentProfile() {
       setStudent(data);
     }
     setLoading(false);
+  };
+
+  const handleStatusUpdate = (newStatus: string) => {
+    if (student) {
+      setStudent({ ...student, current_status: newStatus });
+    }
   };
 
   useEffect(() => {
@@ -91,8 +97,8 @@ export default function StudentProfile() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - Basic Info & Status */}
           <div className="lg:col-span-1 space-y-6">
-            <StudentBasicInfo student={student} />
-            <StudentStatusSection student={student} onStatusUpdated={fetchStudent} />
+            <StudentBasicInfo student={student} onStudentDeleted={() => navigate("/students")} />
+            <StudentStatusSection student={student} onStatusUpdated={handleStatusUpdate} />
           </div>
 
           {/* Right Column - Activity Sections */}
@@ -100,7 +106,7 @@ export default function StudentProfile() {
             <StudentPaymentsSection studentId={student.id} planAmount={student.plan_amount} />
             <StudentFollowUpsSection studentId={student.id} />
             <StudentTasksSection studentId={student.id} />
-            <StudentStatusHistory studentId={student.id} />
+            <StudentAuditLog studentId={student.id} />
           </div>
         </div>
       </div>
