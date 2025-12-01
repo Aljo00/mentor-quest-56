@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { AddStudentDialog } from "@/components/students/AddStudentDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Home, Download } from "lucide-react";
 
 interface Student {
@@ -42,20 +43,37 @@ export default function Students() {
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [planFilter, setPlanFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [amountDueFilter, setAmountDueFilter] = useState<boolean>(false);
 
   const fetchStudents = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data: studentsData, error } = await supabase
       .from("students")
       .select("id, full_name, phone, plan_name, current_status, plan_amount, joining_date")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching students:", error);
-    } else {
-      setStudents(data || []);
-      setFilteredStudents(data || []);
+      setLoading(false);
+      return;
     }
+
+    // Fetch payments to calculate amount due
+    const { data: paymentsData } = await supabase
+      .from("payments")
+      .select("student_id, amount");
+
+    const studentsWithDue = (studentsData || []).map(student => {
+      const studentPayments = paymentsData?.filter(p => p.student_id === student.id) || [];
+      const totalPaid = studentPayments.reduce((sum, p) => sum + p.amount, 0);
+      const amountDue = student.plan_amount - totalPaid;
+      return { ...student, amount_due: amountDue };
+    });
+
+    setStudents(studentsWithDue as any);
+    setFilteredStudents(studentsWithDue as any);
     setLoading(false);
   };
 
@@ -64,17 +82,34 @@ export default function Students() {
   }, []);
 
   useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredStudents(students);
-    } else {
-      const filtered = students.filter(
+    let filtered = [...students];
+
+    // Search filter
+    if (searchTerm.trim() !== "") {
+      filtered = filtered.filter(
         (student) =>
           student.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           student.phone.includes(searchTerm)
       );
-      setFilteredStudents(filtered);
     }
-  }, [searchTerm, students]);
+
+    // Plan filter
+    if (planFilter !== "all") {
+      filtered = filtered.filter(student => student.plan_name === planFilter);
+    }
+
+    // Status filter
+    if (statusFilter !== "all") {
+      filtered = filtered.filter(student => student.current_status === statusFilter);
+    }
+
+    // Amount due filter
+    if (amountDueFilter) {
+      filtered = filtered.filter((student: any) => student.amount_due > 0);
+    }
+
+    setFilteredStudents(filtered);
+  }, [searchTerm, students, planFilter, statusFilter, amountDueFilter]);
 
   if (loading) {
     return (
@@ -141,15 +176,54 @@ export default function Students() {
           </div>
         </div>
 
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            type="text"
-            placeholder="Search by name or phone..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        <div className="space-y-4 mb-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              type="text"
+              placeholder="Search by name or phone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Select value={planFilter} onValueChange={setPlanFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by Plan" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Plans</SelectItem>
+                <SelectItem value="Learning Pack">Learning Pack</SelectItem>
+                <SelectItem value="Starter Kit">Starter Kit</SelectItem>
+                <SelectItem value="Branded DS">Branded DS</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filter by Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="not_started">Not Started</SelectItem>
+                <SelectItem value="website_work_started">Website Work Started</SelectItem>
+                <SelectItem value="store_ready">Store Ready</SelectItem>
+                <SelectItem value="started_selling">Started Selling</SelectItem>
+                <SelectItem value="scaling">Scaling</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant={amountDueFilter ? "default" : "outline"}
+              onClick={() => setAmountDueFilter(!amountDueFilter)}
+              className="w-full"
+            >
+              {amountDueFilter ? "Showing" : "Show"} Amount Due Only
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
