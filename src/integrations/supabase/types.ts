@@ -46,6 +46,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          date: string | null
+          id: string
+          is_read: boolean
+          message: string
+          student_id: string
+          student_name: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          student_id: string
+          student_name: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          student_id?: string
+          student_name?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -54,6 +90,7 @@ export type Database = {
           note: string | null
           recorded_at: string
           recorded_by: string
+          screenshot_url: string | null
           student_id: string
         }
         Insert: {
@@ -63,6 +100,7 @@ export type Database = {
           note?: string | null
           recorded_at?: string
           recorded_by: string
+          screenshot_url?: string | null
           student_id: string
         }
         Update: {
@@ -72,6 +110,7 @@ export type Database = {
           note?: string | null
           recorded_at?: string
           recorded_by?: string
+          screenshot_url?: string | null
           student_id?: string
         }
         Relationships: [
@@ -83,6 +122,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       status_history: {
         Row: {
