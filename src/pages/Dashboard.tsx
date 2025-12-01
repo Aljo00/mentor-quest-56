@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { StudentCard } from "@/components/dashboard/StudentCard";
+import { StudentListModal } from "@/components/dashboard/StudentListModal";
 import { Button } from "@/components/ui/button";
 import {
   Users,
@@ -11,8 +12,6 @@ import {
   TrendingUp,
   AlertCircle,
   Plus,
-  LogOut,
-  ListChecks,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -49,7 +48,12 @@ const Dashboard = () => {
     newThisWeek: 0,
   });
   const [recentStudents, setRecentStudents] = useState<Student[]>([]);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [activeStudentsList, setActiveStudentsList] = useState<Student[]>([]);
+  const [dueStudentsList, setDueStudentsList] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeModal, setActiveModal] = useState(false);
+  const [dueModal, setDueModal] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -112,18 +116,24 @@ const Dashboard = () => {
         amountDue: Math.max(0, s.plan_amount - (paymentsByStudent[s.id] || 0))
       })) || [];
 
+      const allWithDue = students?.map(s => ({
+        ...s,
+        amountDue: Math.max(0, s.plan_amount - (paymentsByStudent[s.id] || 0))
+      })) || [];
+
+      const activeList = allWithDue.filter(s => s.current_status !== "completed");
+      const dueList = allWithDue.filter(s => (s.amountDue || 0) > 0);
+
       setRecentStudents(recentWithDue as any);
+      setAllStudents(allWithDue as any);
+      setActiveStudentsList(activeList as any);
+      setDueStudentsList(dueList as any);
     } catch (error: any) {
       toast.error("Failed to load dashboard data");
       console.error(error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate("/auth");
   };
 
   if (loading) {
@@ -142,24 +152,6 @@ const Dashboard = () => {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-background">
-        {/* Header */}
-        <header className="border-b bg-card shadow-sm sticky top-0 z-10">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-2xl font-bold text-foreground">Student Management</h1>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" onClick={() => navigate("/students")}>
-                  <ListChecks className="h-4 w-4 mr-2" />
-                  All Students
-                </Button>
-                <Button variant="ghost" onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
 
         <div className="container mx-auto px-4 py-6 space-y-6">
           {/* KPIs Grid */}
@@ -169,17 +161,21 @@ const Dashboard = () => {
               value={kpis.totalStudents}
               icon={Users}
             />
-            <KPICard
-              title="Active Students"
-              value={kpis.activeStudents}
-              icon={UserCheck}
-            />
-            <KPICard
-              title="Amount Due"
-              value={`₹${kpis.amountDue.toLocaleString()}`}
-              icon={AlertCircle}
-              className="border-warning/20"
-            />
+            <div onClick={() => setActiveModal(true)} className="cursor-pointer">
+              <KPICard
+                title="Active Students"
+                value={kpis.activeStudents}
+                icon={UserCheck}
+              />
+            </div>
+            <div onClick={() => setDueModal(true)} className="cursor-pointer">
+              <KPICard
+                title="Amount Due"
+                value={`₹${kpis.amountDue.toLocaleString()}`}
+                icon={AlertCircle}
+                className="border-warning/20"
+              />
+            </div>
             <KPICard
               title="Revenue Collected"
               value={`₹${kpis.revenueCollected.toLocaleString()}`}
@@ -228,6 +224,20 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+
+        <StudentListModal
+          open={activeModal}
+          onOpenChange={setActiveModal}
+          title="Active Students"
+          students={activeStudentsList}
+        />
+
+        <StudentListModal
+          open={dueModal}
+          onOpenChange={setDueModal}
+          title="Students with Amount Due"
+          students={dueStudentsList}
+        />
       </div>
     </AuthGuard>
   );
