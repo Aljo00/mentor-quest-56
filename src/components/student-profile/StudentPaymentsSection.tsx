@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Plus, CalendarIcon, Upload, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -43,7 +43,6 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
   const [dueDate, setDueDate] = useState<Date>();
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     amount: "",
@@ -112,11 +111,7 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
     validateField("method", formData.method);
 
     if (!screenshot) {
-      toast({
-        title: "Screenshot Required",
-        description: "Please upload a payment screenshot",
-        variant: "destructive",
-      });
+      toast.error("Please upload a payment screenshot");
       return;
     }
 
@@ -169,10 +164,7 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
         description: `Payment of ₹${validated.amount} recorded`,
       }]);
 
-      toast({
-        title: "Success",
-        description: "Payment recorded successfully",
-      });
+      toast.success("Payment recorded successfully");
 
       setOpen(false);
       setFormData({ amount: "", method: "", note: "" });
@@ -184,17 +176,9 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
       if (error instanceof z.ZodError) {
         const firstError = error.errors[0];
         setErrors({ [firstError.path[0]]: firstError.message });
-        toast({
-          title: "Validation Error",
-          description: firstError.message,
-          variant: "destructive",
-        });
+        toast.error(firstError.message);
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to record payment",
-          variant: "destructive",
-        });
+        toast.error("Failed to record payment");
       }
     } finally {
       setLoading(false);

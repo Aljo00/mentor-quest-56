@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Plus, CheckCircle2, Circle } from "lucide-react";
 import { z } from "zod";
 
@@ -32,7 +32,6 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     title: "",
@@ -91,10 +90,7 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
         description: `Task created: ${validated.title}`,
       }]);
 
-      toast({
-        title: "Success",
-        description: "Task added successfully",
-      });
+      toast.success("Task added successfully");
 
       setOpen(false);
       setFormData({ title: "", due_date: "" });
@@ -104,17 +100,9 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
       if (error instanceof z.ZodError) {
         const firstError = error.errors[0];
         setErrors({ [firstError.path[0]]: firstError.message });
-        toast({
-          title: "Validation Error",
-          description: firstError.message,
-          variant: "destructive",
-        });
+        toast.error(firstError.message);
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to add task",
-          variant: "destructive",
-        });
+        toast.error("Failed to add task");
       }
     } finally {
       setLoading(false);
@@ -149,11 +137,7 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
 
       fetchTasks();
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update task",
-        variant: "destructive",
-      });
+      toast.error("Failed to update task");
     }
   };
 

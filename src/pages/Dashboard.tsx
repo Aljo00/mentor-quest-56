@@ -192,11 +192,11 @@ const Dashboard = () => {
 
           {/* Recent Students Section */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-foreground">Recently Added Students</h2>
               <Button onClick={() => navigate("/students")}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Student
+                <Users className="h-4 w-4 mr-2" />
+                View All Students
               </Button>
             </div>
 

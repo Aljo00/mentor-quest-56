@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Plus, MessageSquare } from "lucide-react";
 import { z } from "zod";
 
@@ -29,7 +29,6 @@ export const StudentFollowUpsSection = ({ studentId }: StudentFollowUpsSectionPr
   const [loading, setLoading] = useState(false);
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const { toast } = useToast();
 
   const fetchFollowUps = async () => {
     const { data, error } = await supabase
@@ -79,10 +78,7 @@ export const StudentFollowUpsSection = ({ studentId }: StudentFollowUpsSectionPr
         description: "Follow-up note added",
       }]);
 
-      toast({
-        title: "Success",
-        description: "Follow-up added successfully",
-      });
+      toast.success("Follow-up added successfully");
 
       setOpen(false);
       setNote("");
@@ -92,17 +88,9 @@ export const StudentFollowUpsSection = ({ studentId }: StudentFollowUpsSectionPr
       if (error instanceof z.ZodError) {
         const firstError = error.errors[0];
         setErrors({ [firstError.path[0]]: firstError.message });
-        toast({
-          title: "Validation Error",
-          description: firstError.message,
-          variant: "destructive",
-        });
+        toast.error(firstError.message);
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to add follow-up",
-          variant: "destructive",
-        });
+        toast.error("Failed to add follow-up");
       }
     } finally {
       setLoading(false);
