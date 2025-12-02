@@ -156,19 +156,19 @@ export default function Students() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div className="flex flex-col gap-4 mb-6">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
               <Home className="h-5 w-5" />
             </Button>
-            <h1 className="text-3xl font-bold">Students</h1>
+            <h1 className="text-2xl md:text-3xl font-bold">Students</h1>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => handleExport('csv')}>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <Button variant="outline" onClick={() => handleExport('csv')} className="flex-1 sm:flex-none">
               <Download className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
-            <Button variant="outline" onClick={() => handleExport('json')}>
+            <Button variant="outline" onClick={() => handleExport('json')} className="flex-1 sm:flex-none">
               <Download className="h-4 w-4 mr-2" />
               Export JSON
             </Button>
@@ -188,7 +188,7 @@ export default function Students() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Select value={planFilter} onValueChange={setPlanFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Filter by Plan" />

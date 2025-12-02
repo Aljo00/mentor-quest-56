@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Plus, CalendarIcon, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { z } from "zod";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -34,7 +34,6 @@ interface AddStudentDialogProps {
 export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
   const [dueDate, setDueDate] = useState<Date>();
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -110,11 +109,7 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
     }
 
     if (!screenshot) {
-      toast({
-        title: "Screenshot Required",
-        description: "Please upload a payment screenshot",
-        variant: "destructive",
-      });
+      toast.error("Please upload a payment screenshot");
       return;
     }
 
@@ -190,10 +185,7 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
         description: "Student created",
       }]);
 
-      toast({
-        title: "Success",
-        description: "Student added successfully",
-      });
+      toast.success("Student added successfully");
 
       setOpen(false);
       setFormData({
@@ -215,17 +207,9 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
       if (error instanceof z.ZodError) {
         const firstError = error.errors[0];
         setErrors({ [firstError.path[0]]: firstError.message });
-        toast({
-          title: "Validation Error",
-          description: firstError.message,
-          variant: "destructive",
-        });
+        toast.error(firstError.message);
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to add student",
-          variant: "destructive",
-        });
+        toast.error("Failed to add student");
       }
     } finally {
       setLoading(false);
@@ -240,7 +224,7 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
           Add Student
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto sm:max-w-[90vw]">
         <DialogHeader>
           <DialogTitle>Add New Student</DialogTitle>
         </DialogHeader>

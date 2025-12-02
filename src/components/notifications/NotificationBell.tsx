@@ -12,7 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface Notification {
   id: string;
@@ -28,7 +28,6 @@ export const NotificationBell = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const fetchNotifications = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -59,10 +58,7 @@ export const NotificationBell = () => {
 
     if (!error) {
       await fetchNotifications();
-      toast({
-        title: "Marked as read",
-        description: "Notification marked as read",
-      });
+      toast.success("Notification marked as read");
     }
   };
 
@@ -78,10 +74,7 @@ export const NotificationBell = () => {
 
     if (!error) {
       await fetchNotifications();
-      toast({
-        title: "All marked as read",
-        description: "All notifications marked as read",
-      });
+      toast.success("All notifications marked as read");
     }
   };
 

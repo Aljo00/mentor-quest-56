@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface Student {
   id: string;
@@ -37,7 +37,6 @@ const statusColors: Record<string, string> = {
 export const StudentStatusSection = ({ student, onStatusUpdated }: StudentStatusSectionProps) => {
   const [newStatus, setNewStatus] = useState(student.current_status);
   const [updating, setUpdating] = useState(false);
-  const { toast } = useToast();
 
   const handleStatusUpdate = async () => {
     if (newStatus === student.current_status) return;
@@ -51,19 +50,12 @@ export const StudentStatusSection = ({ student, onStatusUpdated }: StudentStatus
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Status updated successfully",
-      });
+      toast.success("Status updated successfully");
 
       onStatusUpdated(newStatus);
     } catch (error) {
       console.error("Error updating status:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update status",
-        variant: "destructive",
-      });
+      toast.error("Failed to update status");
     } finally {
       setUpdating(false);
     }
