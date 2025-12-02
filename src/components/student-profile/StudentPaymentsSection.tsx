@@ -10,7 +10,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, CalendarIcon } from "lucide-react";
+import { Plus, CalendarIcon, Upload, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
@@ -28,6 +28,7 @@ interface Payment {
   method: string;
   note: string | null;
   recorded_at: string;
+  screenshot_url: string | null;
 }
 
 interface StudentPaymentsSectionProps {
@@ -40,10 +41,12 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dueDate, setDueDate] = useState<Date>();
+  const [screenshot, setScreenshot] = useState<File | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
-    amount: 0,
+    amount: "",
     method: "",
     note: "",
   });
@@ -67,13 +70,66 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
   const amountDue = planAmount - totalPaid;
 
+  useEffect(() => {
+    if (open && amountDue > 0) {
+      setFormData(prev => ({ ...prev, amount: amountDue.toString() }));
+    }
+  }, [open, amountDue]);
+
+  const validateField = (name: string, value: any) => {
+    const newErrors = { ...errors };
+    
+    switch (name) {
+      case "amount":
+        const numAmount = parseFloat(value);
+        if (!value || numAmount <= 0) {
+          newErrors.amount = "Amount is required and must be greater than 0";
+        } else if (numAmount > amountDue) {
+          newErrors.amount = `Amount cannot exceed due amount of ₹${amountDue.toLocaleString()}`;
+        } else {
+          delete newErrors.amount;
+        }
+        break;
+      case "method":
+        if (!value) newErrors.method = "Payment method is required";
+        else delete newErrors.method;
+        break;
+    }
+    
+    setErrors(newErrors);
+  };
+
+  const handleInputChange = (name: string, value: any) => {
+    setFormData({ ...formData, [name]: value });
+    validateField(name, value);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate all fields
+    validateField("amount", formData.amount);
+    validateField("method", formData.method);
+
+    if (!screenshot) {
+      toast({
+        title: "Screenshot Required",
+        description: "Please upload a payment screenshot",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
+
     setLoading(true);
 
     try {
       const validated = paymentSchema.parse({
-        ...formData,
+        amount: parseFloat(formData.amount),
+        method: formData.method,
         note: formData.note || undefined,
         due_date: dueDate,
       });
@@ -81,15 +137,37 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Upload screenshot
+      const fileExt = screenshot.name.split('.').pop();
+      const fileName = `${studentId}-${Date.now()}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage
+        .from('payment-screenshots')
+        .upload(fileName, screenshot);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('payment-screenshots')
+        .getPublicUrl(fileName);
+
       const { error } = await supabase.from("payments").insert([{
         student_id: studentId,
         recorded_by: user.id,
         amount: validated.amount,
         method: validated.method,
         note: validated.note || null,
+        screenshot_url: publicUrl,
       }]);
 
       if (error) throw error;
+
+      // Log payment in audit
+      await supabase.from("student_audit_log").insert([{
+        student_id: studentId,
+        changed_by: user.id,
+        change_type: "payment_added",
+        description: `Payment of ₹${validated.amount} recorded`,
+      }]);
 
       toast({
         title: "Success",
@@ -97,14 +175,18 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
       });
 
       setOpen(false);
-      setFormData({ amount: 0, method: "", note: "" });
+      setFormData({ amount: "", method: "", note: "" });
       setDueDate(undefined);
+      setScreenshot(null);
+      setErrors({});
       fetchPayments();
     } catch (error) {
       if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        setErrors({ [firstError.path[0]]: firstError.message });
         toast({
           title: "Validation Error",
-          description: error.errors[0].message,
+          description: firstError.message,
           variant: "destructive",
         });
       } else {
@@ -141,15 +223,23 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
                   id="amount"
                   type="number"
                   value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                  required
-                  min="1"
+                  onChange={(e) => handleInputChange("amount", e.target.value)}
+                  placeholder="Enter amount"
                 />
+                {errors.amount && <p className="text-xs text-destructive">{errors.amount}</p>}
+                {amountDue > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Amount due: ₹{amountDue.toLocaleString()}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="method">Payment Method *</Label>
-                <Select value={formData.method} onValueChange={(value) => setFormData({ ...formData, method: value })}>
+                <Select 
+                  value={formData.method} 
+                  onValueChange={(value) => handleInputChange("method", value)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select method" />
                   </SelectTrigger>
@@ -158,51 +248,41 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
                     <SelectItem value="upi">UPI</SelectItem>
                     <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                     <SelectItem value="card">Card</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
+                {errors.method && <p className="text-xs text-destructive">{errors.method}</p>}
               </div>
 
-              {amountDue - formData.amount > 0 && (
-                <div className="space-y-2">
-                  <Label>Due Date for Remaining Amount</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal",
-                          !dueDate && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {dueDate ? format(dueDate, "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={dueDate}
-                        onSelect={setDueDate}
-                        initialFocus
-                        disabled={(date) => date < new Date()}
-                        className="pointer-events-auto"
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <p className="text-xs text-muted-foreground">
-                    Remaining: ₹{(amountDue - formData.amount).toLocaleString()}
-                  </p>
+              <div className="space-y-2">
+                <Label htmlFor="screenshot">Payment Screenshot *</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="screenshot"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => document.getElementById('screenshot')?.click()}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {screenshot ? screenshot.name : "Upload Screenshot"}
+                  </Button>
                 </div>
-              )}
+              </div>
 
               <div className="space-y-2">
                 <Label htmlFor="note">Note</Label>
                 <Textarea
                   id="note"
                   value={formData.note}
-                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                  onChange={(e) => handleInputChange("note", e.target.value)}
                   rows={3}
+                  placeholder="Optional note about the payment"
                 />
               </div>
 
@@ -240,14 +320,25 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
           ) : (
             payments.map((payment) => (
               <div key={payment.id} className="flex justify-between items-start p-3 border rounded-lg">
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold">₹{payment.amount.toLocaleString()}</p>
                   <p className="text-sm text-muted-foreground">{payment.method}</p>
                   {payment.note && <p className="text-xs text-muted-foreground mt-1">{payment.note}</p>}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(payment.recorded_at).toLocaleDateString()}
-                </p>
+                <div className="flex items-center gap-2">
+                  {payment.screenshot_url && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => window.open(payment.screenshot_url!, '_blank')}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {new Date(payment.recorded_at).toLocaleDateString()}
+                  </p>
+                </div>
               </div>
             ))
           )}

@@ -340,9 +340,16 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
                     <Calendar
                       mode="single"
                       selected={dueDate}
-                      onSelect={setDueDate}
+                      onSelect={(date) => {
+                        setDueDate(date);
+                        if (date) {
+                          const newErrors = { ...errors };
+                          delete newErrors.dueDate;
+                          setErrors(newErrors);
+                        }
+                      }}
                       initialFocus
-                      className="pointer-events-auto"
+                      className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
                 </Popover>

@@ -21,8 +21,13 @@ interface StudentAuditLogProps {
 }
 
 const changeTypeColors: Record<string, string> = {
+  created: "bg-green-500/10 text-green-500",
   status_change: "bg-primary/10 text-primary",
   update: "bg-blue-500/10 text-blue-500",
+  payment_added: "bg-emerald-500/10 text-emerald-500",
+  task_created: "bg-purple-500/10 text-purple-500",
+  task_completed: "bg-cyan-500/10 text-cyan-500",
+  follow_up_created: "bg-orange-500/10 text-orange-500",
   delete: "bg-red-500/10 text-red-500",
 };
 

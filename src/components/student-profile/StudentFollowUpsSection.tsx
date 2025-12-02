@@ -28,6 +28,7 @@ export const StudentFollowUpsSection = ({ studentId }: StudentFollowUpsSectionPr
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [note, setNote] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   const fetchFollowUps = async () => {
@@ -48,6 +49,12 @@ export const StudentFollowUpsSection = ({ studentId }: StudentFollowUpsSectionPr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!note.trim()) {
+      setErrors({ note: "Follow-up note is required" });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -64,6 +71,14 @@ export const StudentFollowUpsSection = ({ studentId }: StudentFollowUpsSectionPr
 
       if (error) throw error;
 
+      // Log follow-up in audit
+      await supabase.from("student_audit_log").insert([{
+        student_id: studentId,
+        changed_by: user.id,
+        change_type: "follow_up_created",
+        description: "Follow-up note added",
+      }]);
+
       toast({
         title: "Success",
         description: "Follow-up added successfully",
@@ -71,12 +86,15 @@ export const StudentFollowUpsSection = ({ studentId }: StudentFollowUpsSectionPr
 
       setOpen(false);
       setNote("");
+      setErrors({});
       fetchFollowUps();
     } catch (error) {
       if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        setErrors({ [firstError.path[0]]: firstError.message });
         toast({
           title: "Validation Error",
-          description: error.errors[0].message,
+          description: firstError.message,
           variant: "destructive",
         });
       } else {
@@ -112,11 +130,18 @@ export const StudentFollowUpsSection = ({ studentId }: StudentFollowUpsSectionPr
                 <Textarea
                   id="note"
                   value={note}
-                  onChange={(e) => setNote(e.target.value)}
+                  onChange={(e) => {
+                    setNote(e.target.value);
+                    if (e.target.value.trim()) {
+                      const newErrors = { ...errors };
+                      delete newErrors.note;
+                      setErrors(newErrors);
+                    }
+                  }}
                   rows={5}
-                  required
                   placeholder="Enter follow-up details..."
                 />
+                {errors.note && <p className="text-xs text-destructive">{errors.note}</p>}
               </div>
 
               <div className="flex justify-end gap-2">
