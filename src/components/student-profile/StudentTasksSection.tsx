@@ -31,6 +31,7 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -57,6 +58,12 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.title.trim()) {
+      setErrors({ title: "Task title is required" });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -64,6 +71,9 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
         title: formData.title,
         due_date: formData.due_date || undefined,
       });
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
       const { error } = await supabase.from("tasks").insert([{
         student_id: studentId,
@@ -73,6 +83,14 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
 
       if (error) throw error;
 
+      // Log task creation in audit
+      await supabase.from("student_audit_log").insert([{
+        student_id: studentId,
+        changed_by: user.id,
+        change_type: "task_created",
+        description: `Task created: ${validated.title}`,
+      }]);
+
       toast({
         title: "Success",
         description: "Task added successfully",
@@ -80,12 +98,15 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
 
       setOpen(false);
       setFormData({ title: "", due_date: "" });
+      setErrors({});
       fetchTasks();
     } catch (error) {
       if (error instanceof z.ZodError) {
+        const firstError = error.errors[0];
+        setErrors({ [firstError.path[0]]: firstError.message });
         toast({
           title: "Validation Error",
-          description: error.errors[0].message,
+          description: firstError.message,
           variant: "destructive",
         });
       } else {
@@ -101,22 +122,38 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
   };
 
   const toggleTaskComplete = async (taskId: string, currentStatus: boolean) => {
-    const { error } = await supabase
-      .from("tasks")
-      .update({
-        completed: !currentStatus,
-        completed_at: !currentStatus ? new Date().toISOString() : null,
-      })
-      .eq("id", taskId);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
-    if (error) {
+      const { error } = await supabase
+        .from("tasks")
+        .update({
+          completed: !currentStatus,
+          completed_at: !currentStatus ? new Date().toISOString() : null,
+        })
+        .eq("id", taskId);
+
+      if (error) throw error;
+
+      // Log task completion in audit
+      if (!currentStatus) {
+        const task = tasks.find(t => t.id === taskId);
+        await supabase.from("student_audit_log").insert([{
+          student_id: studentId,
+          changed_by: user.id,
+          change_type: "task_completed",
+          description: `Task completed: ${task?.title}`,
+        }]);
+      }
+
+      fetchTasks();
+    } catch (error) {
       toast({
         title: "Error",
         description: "Failed to update task",
         variant: "destructive",
       });
-    } else {
-      fetchTasks();
     }
   };
 
@@ -141,9 +178,17 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
                 <Input
                   id="title"
                   value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, title: e.target.value });
+                    if (e.target.value.trim()) {
+                      const newErrors = { ...errors };
+                      delete newErrors.title;
+                      setErrors(newErrors);
+                    }
+                  }}
+                  placeholder="Enter task title"
                 />
+                {errors.title && <p className="text-xs text-destructive">{errors.title}</p>}
               </div>
 
               <div className="space-y-2">
