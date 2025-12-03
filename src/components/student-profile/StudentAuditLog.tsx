@@ -13,7 +13,7 @@ interface AuditLog {
   description: string | null;
   changed_at: string;
   changed_by: string;
-  user_email?: string;
+  user_name?: string;
 }
 
 interface StudentAuditLogProps {
@@ -60,26 +60,30 @@ export const StudentAuditLog = ({ studentId }: StudentAuditLogProps) => {
         return;
       }
 
-      // Fetch user emails for each log entry
+      // Fetch user names from profiles table
       if (logsData && logsData.length > 0) {
         const userIds = [...new Set(logsData.map((log) => log.changed_by))];
 
-        // Try to get user info from auth
-        const { data: { users } } = await supabase.auth.admin.listUsers();
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", userIds);
 
-        const emailMap: Record<string, string> = {};
-        if (users) {
-          users.forEach((user: { id: string; email?: string }) => {
-            emailMap[user.id] = user.email || "Unknown";
+        const nameMap: Record<string, string> = {};
+        if (profilesData) {
+          profilesData.forEach((profile) => {
+            nameMap[profile.user_id] = profile.full_name;
           });
         }
 
         const enrichedLogs = logsData.map((log) => ({
           ...log,
-          user_email: emailMap[log.changed_by] || "Unknown User",
+          user_name: nameMap[log.changed_by] || "Unknown User",
         }));
 
         setLogs(enrichedLogs);
+      } else {
+        setLogs([]);
       }
       setLoading(false);
     };
@@ -166,7 +170,7 @@ export const StudentAuditLog = ({ studentId }: StudentAuditLogProps) => {
 
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <User className="h-3 w-3" />
-                  <span>{log.user_email}</span>
+                  <span>{log.user_name}</span>
                   <Clock className="h-3 w-3 ml-2" />
                   <span>{new Date(log.changed_at).toLocaleString()}</span>
                 </div>

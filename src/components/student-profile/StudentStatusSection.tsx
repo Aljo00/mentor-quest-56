@@ -18,20 +18,20 @@ interface StudentStatusSectionProps {
 
 const statusOptions = [
   { value: "not_started", label: "Not Started" },
-  { value: "website_work_started", label: "Website Work Started" },
-  { value: "store_ready", label: "Store Ready" },
-  { value: "started_selling", label: "Started Selling" },
-  { value: "scaling", label: "Scaling" },
+  { value: "whatsapp_group_added", label: "Added to WhatsApp Group" },
+  { value: "course_completed", label: "Course Completed" },
+  { value: "website_completed", label: "Website Setup Completed" },
+  { value: "selling_initiated", label: "Selling Initiated" },
   { value: "completed", label: "Completed" },
 ];
 
 const statusColors: Record<string, string> = {
-  not_started: "bg-muted text-muted-foreground",
-  website_work_started: "bg-blue-500/10 text-blue-500",
-  store_ready: "bg-purple-500/10 text-purple-500",
-  started_selling: "bg-amber-500/10 text-amber-500",
-  scaling: "bg-green-500/10 text-green-500",
-  completed: "bg-emerald-500/10 text-emerald-500",
+  not_started: "bg-muted/50 text-muted-foreground",
+  whatsapp_group_added: "bg-blue-500/5 text-blue-400",
+  course_completed: "bg-purple-500/5 text-purple-400",
+  website_completed: "bg-amber-500/5 text-amber-400",
+  selling_initiated: "bg-cyan-500/5 text-cyan-400",
+  completed: "bg-emerald-500/5 text-emerald-400",
 };
 
 export const StudentStatusSection = ({ student, onStatusUpdated }: StudentStatusSectionProps) => {

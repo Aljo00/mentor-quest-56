@@ -350,10 +350,10 @@ export type Database = {
       app_role: "admin" | "support"
       student_status:
         | "not_started"
-        | "website_work_started"
-        | "store_ready"
-        | "started_selling"
-        | "scaling"
+        | "whatsapp_group_added"
+        | "course_completed"
+        | "website_completed"
+        | "selling_initiated"
         | "completed"
     }
     CompositeTypes: {
@@ -485,10 +485,10 @@ export const Constants = {
       app_role: ["admin", "support"],
       student_status: [
         "not_started",
-        "website_work_started",
-        "store_ready",
-        "started_selling",
-        "scaling",
+        "whatsapp_group_added",
+        "course_completed",
+        "website_completed",
+        "selling_initiated",
         "completed",
       ],
     },
