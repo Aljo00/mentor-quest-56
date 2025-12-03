@@ -4,15 +4,18 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, CheckCircle2, Circle } from "lucide-react";
+import { Plus, CheckCircle2, Circle, CalendarIcon } from "lucide-react";
 import { z } from "zod";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 const taskSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(200),
-  due_date: z.string().optional(),
+  due_date: z.date().optional(),
 });
 
 interface Task {
@@ -32,11 +35,8 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const [formData, setFormData] = useState({
-    title: "",
-    due_date: "",
-  });
+  const [title, setTitle] = useState("");
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
 
   const fetchTasks = async () => {
     const { data, error } = await supabase
@@ -58,7 +58,7 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title.trim()) {
+    if (!title.trim()) {
       setErrors({ title: "Task title is required" });
       return;
     }
@@ -67,8 +67,8 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
 
     try {
       const validated = taskSchema.parse({
-        title: formData.title,
-        due_date: formData.due_date || undefined,
+        title: title,
+        due_date: dueDate,
       });
 
       const { data: { user } } = await supabase.auth.getUser();
@@ -77,7 +77,7 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
       const { error } = await supabase.from("tasks").insert([{
         student_id: studentId,
         title: validated.title,
-        due_date: validated.due_date || null,
+        due_date: validated.due_date?.toISOString() || null,
       }]);
 
       if (error) throw error;
@@ -93,7 +93,8 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
       toast.success("Task added successfully");
 
       setOpen(false);
-      setFormData({ title: "", due_date: "" });
+      setTitle("");
+      setDueDate(undefined);
       setErrors({});
       fetchTasks();
     } catch (error) {
@@ -161,9 +162,9 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
                 <Label htmlFor="title">Title *</Label>
                 <Input
                   id="title"
-                  value={formData.title}
+                  value={title}
                   onChange={(e) => {
-                    setFormData({ ...formData, title: e.target.value });
+                    setTitle(e.target.value);
                     if (e.target.value.trim()) {
                       const newErrors = { ...errors };
                       delete newErrors.title;
@@ -176,13 +177,30 @@ export const StudentTasksSection = ({ studentId }: StudentTasksSectionProps) => 
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="due_date">Due Date</Label>
-                <Input
-                  id="due_date"
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-                />
+                <Label>Due Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !dueDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dueDate ? format(dueDate, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={dueDate}
+                      onSelect={setDueDate}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="flex justify-end gap-2">

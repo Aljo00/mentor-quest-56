@@ -20,20 +20,20 @@ interface Student {
 }
 
 const statusColors: Record<string, string> = {
-  not_started: "bg-muted text-muted-foreground",
-  website_work_started: "bg-blue-500/10 text-blue-500",
-  store_ready: "bg-purple-500/10 text-purple-500",
-  started_selling: "bg-amber-500/10 text-amber-500",
-  scaling: "bg-green-500/10 text-green-500",
-  completed: "bg-emerald-500/10 text-emerald-500",
+  not_started: "bg-muted/50 text-muted-foreground",
+  whatsapp_group_added: "bg-blue-500/5 text-blue-400",
+  course_completed: "bg-purple-500/5 text-purple-400",
+  website_completed: "bg-amber-500/5 text-amber-400",
+  selling_initiated: "bg-cyan-500/5 text-cyan-400",
+  completed: "bg-emerald-500/5 text-emerald-400",
 };
 
 const statusLabels: Record<string, string> = {
   not_started: "Not Started",
-  website_work_started: "Website Work Started",
-  store_ready: "Store Ready",
-  started_selling: "Started Selling",
-  scaling: "Scaling",
+  whatsapp_group_added: "Added to WhatsApp Group",
+  course_completed: "Course Completed",
+  website_completed: "Website Setup Completed",
+  selling_initiated: "Selling Initiated",
   completed: "Completed",
 };
 
@@ -154,8 +154,8 @@ export default function Students() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background p-4 md:p-8 w-full overflow-x-hidden">
+      <div className="w-full max-w-7xl mx-auto">
         <div className="flex flex-col gap-4 mb-6">
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
@@ -208,10 +208,10 @@ export default function Students() {
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="not_started">Not Started</SelectItem>
-                <SelectItem value="website_work_started">Website Work Started</SelectItem>
-                <SelectItem value="store_ready">Store Ready</SelectItem>
-                <SelectItem value="started_selling">Started Selling</SelectItem>
-                <SelectItem value="scaling">Scaling</SelectItem>
+                <SelectItem value="whatsapp_group_added">Added to WhatsApp Group</SelectItem>
+                <SelectItem value="course_completed">Course Completed</SelectItem>
+                <SelectItem value="website_completed">Website Setup Completed</SelectItem>
+                <SelectItem value="selling_initiated">Selling Initiated</SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>

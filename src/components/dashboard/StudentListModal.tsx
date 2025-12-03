@@ -20,12 +20,21 @@ interface StudentListModalProps {
 }
 
 const statusColors: Record<string, string> = {
-  not_started: "bg-muted text-muted-foreground",
-  website_work_started: "bg-blue-500/10 text-blue-500",
-  store_ready: "bg-primary/10 text-primary",
-  started_selling: "bg-primary/20 text-primary",
-  scaling: "bg-purple-500/10 text-purple-500",
-  completed: "bg-success/10 text-success",
+  not_started: "bg-muted/50 text-muted-foreground",
+  whatsapp_group_added: "bg-blue-500/5 text-blue-400",
+  course_completed: "bg-purple-500/5 text-purple-400",
+  website_completed: "bg-amber-500/5 text-amber-400",
+  selling_initiated: "bg-cyan-500/5 text-cyan-400",
+  completed: "bg-emerald-500/5 text-emerald-400",
+};
+
+const statusLabels: Record<string, string> = {
+  not_started: "Not Started",
+  whatsapp_group_added: "WhatsApp Added",
+  course_completed: "Course Done",
+  website_completed: "Website Done",
+  selling_initiated: "Selling",
+  completed: "Completed",
 };
 
 export const StudentListModal = ({ open, onOpenChange, title, students }: StudentListModalProps) => {
@@ -49,7 +58,7 @@ export const StudentListModal = ({ open, onOpenChange, title, students }: Studen
                     navigate(`/students/${student.id}`);
                     onOpenChange(false);
                   }}
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent cursor-pointer transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border bg-card cursor-pointer transition-colors"
                 >
                   <div className="flex-1">
                     <h3 className="font-medium text-foreground">{student.full_name}</h3>
@@ -58,7 +67,7 @@ export const StudentListModal = ({ open, onOpenChange, title, students }: Studen
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <Badge className={statusColors[student.current_status] || "bg-muted"}>
-                      {student.current_status.replace(/_/g, " ")}
+                      {statusLabels[student.current_status] || student.current_status}
                     </Badge>
                     {student.amountDue !== undefined && student.amountDue > 0 && (
                       <span className="text-sm font-medium text-warning">

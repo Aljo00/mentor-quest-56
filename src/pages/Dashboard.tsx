@@ -11,7 +11,6 @@ import {
   DollarSign,
   TrendingUp,
   AlertCircle,
-  Plus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -51,9 +50,11 @@ const Dashboard = () => {
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [activeStudentsList, setActiveStudentsList] = useState<Student[]>([]);
   const [dueStudentsList, setDueStudentsList] = useState<Student[]>([]);
+  const [newThisWeekStudents, setNewThisWeekStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeModal, setActiveModal] = useState(false);
   const [dueModal, setDueModal] = useState(false);
+  const [newThisWeekModal, setNewThisWeekModal] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -97,9 +98,9 @@ const Dashboard = () => {
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
       
-      const newThisWeek = students?.filter(
+      const newThisWeekList = students?.filter(
         (s) => new Date(s.joining_date) >= oneWeekAgo
-      ).length || 0;
+      ) || [];
 
       setKpis({
         totalStudents,
@@ -107,7 +108,7 @@ const Dashboard = () => {
         amountDue,
         revenueCollected,
         needsAttention: 0, // To be implemented with follow-ups logic
-        newThisWeek,
+        newThisWeek: newThisWeekList.length,
       });
 
       // Get recent 5 students with their due amounts
@@ -123,11 +124,16 @@ const Dashboard = () => {
 
       const activeList = allWithDue.filter(s => s.current_status !== "completed");
       const dueList = allWithDue.filter(s => (s.amountDue || 0) > 0);
+      const newWeekWithDue = newThisWeekList.map(s => ({
+        ...s,
+        amountDue: Math.max(0, s.plan_amount - (paymentsByStudent[s.id] || 0))
+      }));
 
       setRecentStudents(recentWithDue as any);
       setAllStudents(allWithDue as any);
       setActiveStudentsList(activeList as any);
       setDueStudentsList(dueList as any);
+      setNewThisWeekStudents(newWeekWithDue as any);
     } catch (error: any) {
       toast.error("Failed to load dashboard data");
       console.error(error);
@@ -182,12 +188,14 @@ const Dashboard = () => {
               icon={DollarSign}
               className="border-success/20"
             />
-            <KPICard
-              title="New This Week"
-              value={kpis.newThisWeek}
-              icon={TrendingUp}
-              className="border-primary/20"
-            />
+            <div onClick={() => setNewThisWeekModal(true)} className="cursor-pointer">
+              <KPICard
+                title="New This Week"
+                value={kpis.newThisWeek}
+                icon={TrendingUp}
+                className="border-primary/20"
+              />
+            </div>
           </div>
 
           {/* Recent Students Section */}
@@ -237,6 +245,13 @@ const Dashboard = () => {
           onOpenChange={setDueModal}
           title="Students with Amount Due"
           students={dueStudentsList}
+        />
+
+        <StudentListModal
+          open={newThisWeekModal}
+          onOpenChange={setNewThisWeekModal}
+          title="New This Week"
+          students={newThisWeekStudents}
         />
       </div>
     </AuthGuard>

@@ -16,12 +16,12 @@ interface StudentCardProps {
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  not_started: { label: "Not Started", className: "bg-status-not-started text-white" },
-  website_work_started: { label: "Website Work", className: "bg-status-in-progress text-white" },
-  store_ready: { label: "Store Ready", className: "bg-status-store-ready text-white" },
-  started_selling: { label: "Selling", className: "bg-status-selling text-white" },
-  scaling: { label: "Scaling", className: "bg-status-scaling text-white" },
-  completed: { label: "Completed", className: "bg-status-completed text-white" },
+  not_started: { label: "Not Started", className: "bg-muted/50 text-muted-foreground" },
+  whatsapp_group_added: { label: "WhatsApp Added", className: "bg-blue-500/5 text-blue-400" },
+  course_completed: { label: "Course Done", className: "bg-purple-500/5 text-purple-400" },
+  website_completed: { label: "Website Done", className: "bg-amber-500/5 text-amber-400" },
+  selling_initiated: { label: "Selling", className: "bg-cyan-500/5 text-cyan-400" },
+  completed: { label: "Completed", className: "bg-emerald-500/5 text-emerald-400" },
 };
 
 export const StudentCard = ({
