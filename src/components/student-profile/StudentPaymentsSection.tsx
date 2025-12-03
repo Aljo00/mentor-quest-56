@@ -43,6 +43,7 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
   const [dueDate, setDueDate] = useState<Date>();
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [viewScreenshot, setViewScreenshot] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     amount: "",
@@ -314,7 +315,7 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(payment.screenshot_url!, '_blank')}
+                      onClick={() => setViewScreenshot(payment.screenshot_url)}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -327,6 +328,24 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
             ))
           )}
         </div>
+
+        {/* Screenshot View Modal */}
+        <Dialog open={!!viewScreenshot} onOpenChange={() => setViewScreenshot(null)}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Payment Screenshot</DialogTitle>
+            </DialogHeader>
+            {viewScreenshot && (
+              <div className="flex items-center justify-center">
+                <img 
+                  src={viewScreenshot} 
+                  alt="Payment Screenshot" 
+                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                />
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
