@@ -19,7 +19,7 @@ interface StudentStatusSectionProps {
 const statusOptions = [
   { value: "not_started", label: "Not Started" },
   { value: "whatsapp_group_added", label: "Added to WhatsApp Group" },
-  { value: "course_completed", label: "Course Completed" },
+  { value: "course_completed", label: "Course Video Access Completed" },
   { value: "website_completed", label: "Website Setup Completed" },
   { value: "selling_initiated", label: "Selling Initiated" },
   { value: "completed", label: "Completed" },

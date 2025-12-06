@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, CalendarIcon, Upload, Eye } from "lucide-react";
+import { Plus, CalendarIcon, Upload, Eye, Trash2, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
@@ -44,6 +45,8 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
   const [screenshot, setScreenshot] = useState<File | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [viewScreenshot, setViewScreenshot] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     amount: "",
@@ -186,6 +189,37 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
     }
   };
 
+  const handleDeletePayment = async (paymentId: string, amount: number) => {
+    setDeletingPaymentId(paymentId);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const { error } = await supabase
+        .from("payments")
+        .delete()
+        .eq("id", paymentId);
+
+      if (error) throw error;
+
+      // Log deletion in audit
+      await supabase.from("student_audit_log").insert([{
+        student_id: studentId,
+        changed_by: user.id,
+        change_type: "payment_deleted",
+        description: `Payment of ₹${amount} deleted`,
+      }]);
+
+      toast.success("Payment deleted successfully");
+      fetchPayments();
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+      toast.error("Failed to delete payment");
+    } finally {
+      setDeletingPaymentId(null);
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -315,11 +349,48 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setViewScreenshot(payment.screenshot_url)}
+                      onClick={() => {
+                        setImageLoading(true);
+                        setViewScreenshot(payment.screenshot_url);
+                      }}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
                   )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        disabled={deletingPaymentId === payment.id}
+                      >
+                        {deletingPaymentId === payment.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Payment</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete this payment of ₹{payment.amount.toLocaleString()}? 
+                          This amount will be added back to the due amount.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeletePayment(payment.id, payment.amount)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                   <p className="text-xs text-muted-foreground">
                     {new Date(payment.recorded_at).toLocaleDateString()}
                   </p>
@@ -336,11 +407,21 @@ export const StudentPaymentsSection = ({ studentId, planAmount }: StudentPayment
               <DialogTitle>Payment Screenshot</DialogTitle>
             </DialogHeader>
             {viewScreenshot && (
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-center min-h-[200px]">
+                {imageLoading && (
+                  <div className="absolute flex flex-col items-center gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">Loading image...</p>
+                  </div>
+                )}
                 <img 
                   src={viewScreenshot} 
                   alt="Payment Screenshot" 
-                  className="max-w-full max-h-[70vh] object-contain rounded-lg"
+                  className={cn(
+                    "max-w-full max-h-[70vh] object-contain rounded-lg transition-opacity",
+                    imageLoading ? "opacity-0" : "opacity-100"
+                  )}
+                  onLoad={() => setImageLoading(false)}
                 />
               </div>
             )}
