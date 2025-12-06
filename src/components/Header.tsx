@@ -1,14 +1,16 @@
 import { NotificationBell } from "./notifications/NotificationBell";
 import { Button } from "./ui/button";
-import { Home, ListChecks, LogOut } from "lucide-react";
+import { Home, ListChecks, LogOut, Shield } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useSuperadmin } from "@/hooks/useSuperadmin";
 
 export const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { isSuperadmin } = useSuperadmin();
 
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -47,6 +49,16 @@ export const Header = () => {
               >
                 <ListChecks className="mr-2 h-4 w-4" />
                 Students
+              </Button>
+            )}
+            {isSuperadmin && location.pathname !== "/users" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/users")}
+              >
+                <Shield className="mr-2 h-4 w-4" />
+                Users
               </Button>
             )}
           </div>
