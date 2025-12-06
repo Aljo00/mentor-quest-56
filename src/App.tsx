@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import Auth from "./pages/Auth";
 import Students from "./pages/Students";
 import StudentProfile from "./pages/StudentProfile";
+import Users from "./pages/Users";
 import NotFound from "./pages/NotFound";
 import { AuthGuard } from "./components/auth/AuthGuard";
 import { Header } from "./components/Header";
@@ -28,6 +29,7 @@ const App = () => (
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/students" element={<Students />} />
                   <Route path="/students/:id" element={<StudentProfile />} />
+                  <Route path="/users" element={<Users />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AuthGuard>
