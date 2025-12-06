@@ -8,7 +8,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shield, Users as UsersIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Shield, Users as UsersIcon, Trash2 } from "lucide-react";
 
 type AppRole = "admin" | "support" | "superadmin";
 
@@ -110,6 +112,40 @@ export default function Users() {
     }
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      // Delete from user_roles
+      const { error: rolesError } = await supabase
+        .from("user_roles")
+        .delete()
+        .eq("user_id", userId);
+
+      if (rolesError) throw rolesError;
+
+      // Delete from profiles
+      const { error: profilesError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("user_id", userId);
+
+      if (profilesError) throw profilesError;
+
+      setUsers((prev) => prev.filter((user) => user.user_id !== userId));
+
+      toast({
+        title: "Success",
+        description: "User deleted successfully",
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getRoleBadgeVariant = (role: AppRole) => {
     switch (role) {
       case "superadmin":
@@ -182,20 +218,46 @@ export default function Users() {
                       {new Date(user.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={user.role}
-                        onValueChange={(value: AppRole) =>
-                          handleRoleChange(user.user_id, value)
-                        }
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="support">Support</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={user.role}
+                          onValueChange={(value: AppRole) =>
+                            handleRoleChange(user.user_id, value)
+                          }
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="support">Support</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete User</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete {user.full_name}? This action cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteUser(user.user_id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
