@@ -58,12 +58,12 @@ export default function Users() {
 
       if (profilesError) throw profilesError;
 
-      // Combine data - for now we'll show what we have
+      // Combine data
       const usersWithRoles: UserWithRole[] = (rolesData || []).map((role) => {
         const profile = profilesData?.find((p) => p.user_id === role.user_id);
         return {
           user_id: role.user_id,
-          email: "", // We'll fetch this separately if needed
+          email: (profile as any)?.email || "",
           full_name: profile?.full_name || "Unknown",
           role: role.role as AppRole,
           created_at: role.created_at,
@@ -201,7 +201,7 @@ export default function Users() {
               <TableBody>
                 {users.map((user) => (
                   <TableRow key={user.user_id}>
-                    <TableCell className="font-medium">{user.full_name}</TableCell>
+                    <TableCell className="font-medium">{user.email || user.full_name}</TableCell>
                     <TableCell>
                       <Badge variant={getRoleBadgeVariant(user.role)}>
                         {user.role}
@@ -219,9 +219,10 @@ export default function Users() {
                           }
                         >
                           <SelectTrigger className="w-32">
-                            <SelectValue />
+                            <SelectValue placeholder={user.role} />
                           </SelectTrigger>
                           <SelectContent>
+                            <SelectItem value="superadmin">Superadmin</SelectItem>
                             <SelectItem value="admin">Admin</SelectItem>
                             <SelectItem value="support">Support</SelectItem>
                           </SelectContent>

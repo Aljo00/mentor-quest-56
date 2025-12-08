@@ -176,7 +176,7 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
         .from('payment-screenshots')
         .getPublicUrl(fileName);
 
-      // Insert payment
+      // Insert payment with due_date
       const { error: paymentError } = await supabase.from("payments").insert([{
         student_id: studentData.id,
         amount: validated.first_payment,
@@ -184,6 +184,7 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
         note: validated.payment_note || null,
         recorded_by: user.id,
         screenshot_url: publicUrl,
+        due_date: dueDate?.toISOString() || null,
       }]);
 
       if (paymentError) throw paymentError;
