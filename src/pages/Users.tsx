@@ -114,21 +114,14 @@ export default function Users() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // Delete from user_roles
-      const { error: rolesError } = await supabase
-        .from("user_roles")
-        .delete()
-        .eq("user_id", userId);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
-      if (rolesError) throw rolesError;
+      const response = await supabase.functions.invoke("delete-user", {
+        body: { userId },
+      });
 
-      // Delete from profiles
-      const { error: profilesError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("user_id", userId);
-
-      if (profilesError) throw profilesError;
+      if (response.error) throw response.error;
 
       setUsers((prev) => prev.filter((user) => user.user_id !== userId));
 
