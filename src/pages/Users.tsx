@@ -9,8 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Shield, Users as UsersIcon, Trash2 } from "lucide-react";
+import { Shield, Users as UsersIcon, Trash2, Plus, Copy, Check } from "lucide-react";
 
 type AppRole = "admin" | "support" | "superadmin";
 
@@ -28,6 +31,11 @@ export default function Users() {
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({ fullName: "", email: "", password: "" });
+  const [createdUser, setCreatedUser] = useState<{ email: string; password: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!superadminLoading && !isSuperadmin) {
@@ -51,10 +59,10 @@ export default function Users() {
 
       if (rolesError) throw rolesError;
 
-      // Get profiles for each user
+      // Get profiles for each user with email
       const { data: profilesData, error: profilesError } = await supabase
         .from("profiles")
-        .select("user_id, full_name");
+        .select("user_id, full_name, email");
 
       if (profilesError) throw profilesError;
 
@@ -139,6 +147,62 @@ export default function Users() {
     }
   };
 
+  const handleCreateUser = async () => {
+    if (!newUserForm.fullName.trim() || !newUserForm.email.trim() || !newUserForm.password.trim()) {
+      toast({
+        title: "Error",
+        description: "Please fill all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCreateLoading(true);
+    try {
+      const response = await supabase.functions.invoke("create-user", {
+        body: {
+          email: newUserForm.email,
+          password: newUserForm.password,
+          fullName: newUserForm.fullName,
+        },
+      });
+
+      if (response.error) throw response.error;
+      if (response.data?.error) throw new Error(response.data.error);
+
+      setCreatedUser({ email: newUserForm.email, password: newUserForm.password });
+      fetchUsers();
+      
+      toast({
+        title: "Success",
+        description: "User created successfully",
+      });
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create user",
+        variant: "destructive",
+      });
+    } finally {
+      setCreateLoading(false);
+    }
+  };
+
+  const handleCopyCredentials = () => {
+    if (createdUser) {
+      navigator.clipboard.writeText(`Email: ${createdUser.email}\nPassword: ${createdUser.password}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const resetCreateDialog = () => {
+    setNewUserForm({ fullName: "", email: "", password: "" });
+    setCreatedUser(null);
+    setCopied(false);
+  };
+
   const getRoleBadgeVariant = (role: AppRole) => {
     switch (role) {
       case "superadmin":
@@ -168,9 +232,85 @@ export default function Users() {
     <main className="container py-8 px-4">
       <Card>
         <CardHeader>
-          <div className="flex items-center gap-2">
-            <Shield className="h-6 w-6 text-primary" />
-            <CardTitle>User Management</CardTitle>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="h-6 w-6 text-primary" />
+              <CardTitle>User Management</CardTitle>
+            </div>
+            <Dialog open={createDialogOpen} onOpenChange={(open) => {
+              setCreateDialogOpen(open);
+              if (!open) resetCreateDialog();
+            }}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add User
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{createdUser ? "User Created" : "Create New User"}</DialogTitle>
+                  <DialogDescription>
+                    {createdUser 
+                      ? "Share these credentials with the new user." 
+                      : "Enter the details for the new user account."}
+                  </DialogDescription>
+                </DialogHeader>
+                {createdUser ? (
+                  <div className="space-y-4">
+                    <div className="rounded-lg bg-muted p-4 space-y-2">
+                      <p><strong>Email:</strong> {createdUser.email}</p>
+                      <p><strong>Password:</strong> {createdUser.password}</p>
+                    </div>
+                    <Button onClick={handleCopyCredentials} className="w-full">
+                      {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                      {copied ? "Copied!" : "Copy Credentials"}
+                    </Button>
+                    <Button variant="outline" onClick={() => {
+                      setCreateDialogOpen(false);
+                      resetCreateDialog();
+                    }} className="w-full">
+                      Done
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">Full Name</Label>
+                      <Input
+                        id="fullName"
+                        value={newUserForm.fullName}
+                        onChange={(e) => setNewUserForm({ ...newUserForm, fullName: e.target.value })}
+                        placeholder="John Doe"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={newUserForm.email}
+                        onChange={(e) => setNewUserForm({ ...newUserForm, email: e.target.value })}
+                        placeholder="user@example.com"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        type="text"
+                        value={newUserForm.password}
+                        onChange={(e) => setNewUserForm({ ...newUserForm, password: e.target.value })}
+                        placeholder="Enter password"
+                      />
+                    </div>
+                    <Button onClick={handleCreateUser} disabled={createLoading} className="w-full">
+                      {createLoading ? "Creating..." : "Create User"}
+                    </Button>
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
           <p className="text-sm text-muted-foreground">
             Manage user roles and permissions. Only superadmins can access this page.
