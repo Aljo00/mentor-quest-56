@@ -98,24 +98,35 @@ export const AddStudentDialog = ({ onStudentAdded }: AddStudentDialogProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate all fields
-    Object.keys(formData).forEach(key => {
-      validateField(key, formData[key as keyof typeof formData]);
-    });
+    // Build validation errors synchronously
+    const validationErrors: Record<string, string> = {};
+    
+    if (!formData.full_name.trim()) validationErrors.full_name = "Name is required";
+    if (!formData.phone.trim()) validationErrors.phone = "Phone is required";
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      validationErrors.email = "Invalid email address";
+    }
+    if (!formData.plan_name) validationErrors.plan_name = "Plan is required";
+    if (!formData.first_payment || parseFloat(formData.first_payment) <= 0) {
+      validationErrors.first_payment = "First payment is required";
+    }
+    if (!formData.payment_method.trim()) validationErrors.payment_method = "Payment method is required";
 
     if (!dueDate) {
-      setErrors(prev => ({ ...prev, dueDate: "Due date is required" }));
-      return;
+      validationErrors.dueDate = "Due date is required";
     }
 
     if (!screenshot) {
-      toast.error("Please upload a payment screenshot");
-      return;
+      validationErrors.screenshot = "Payment screenshot is required";
     }
 
-    if (Object.keys(errors).length > 0) {
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast.error("Please fill all required fields");
       return;
     }
+    
+    setErrors({});
 
     setLoading(true);
 
