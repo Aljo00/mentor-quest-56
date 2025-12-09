@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useSuperadmin } from "@/hooks/useSuperadmin";
 
 interface KPIData {
   totalStudents: number;
@@ -38,6 +39,7 @@ interface Student {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { isSuperadmin, loading: superadminLoading } = useSuperadmin();
   const [kpis, setKpis] = useState<KPIData>({
     totalStudents: 0,
     activeStudents: 0,
@@ -79,28 +81,29 @@ const Dashboard = () => {
 
       // Calculate KPIs
       const totalStudents = students?.length || 0;
-      const activeStudents = students?.filter(
-        (s) => s.current_status !== "completed"
-      ).length || 0;
+      const activeStudents =
+        students?.filter((s) => s.current_status !== "completed").length || 0;
 
-      const paymentsByStudent = payments?.reduce((acc, p) => {
-        acc[p.student_id] = (acc[p.student_id] || 0) + p.amount;
-        return acc;
-      }, {} as Record<string, number>) || {};
+      const paymentsByStudent =
+        payments?.reduce((acc, p) => {
+          acc[p.student_id] = (acc[p.student_id] || 0) + p.amount;
+          return acc;
+        }, {} as Record<string, number>) || {};
 
-      const revenueCollected = payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-      
-      const amountDue = students?.reduce((sum, s) => {
-        const paid = paymentsByStudent[s.id] || 0;
-        return sum + Math.max(0, s.plan_amount - paid);
-      }, 0) || 0;
+      const revenueCollected =
+        payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+
+      const amountDue =
+        students?.reduce((sum, s) => {
+          const paid = paymentsByStudent[s.id] || 0;
+          return sum + Math.max(0, s.plan_amount - paid);
+        }, 0) || 0;
 
       const oneWeekAgo = new Date();
       oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-      
-      const newThisWeekList = students?.filter(
-        (s) => new Date(s.joining_date) >= oneWeekAgo
-      ) || [];
+
+      const newThisWeekList =
+        students?.filter((s) => new Date(s.joining_date) >= oneWeekAgo) || [];
 
       setKpis({
         totalStudents,
@@ -112,21 +115,31 @@ const Dashboard = () => {
       });
 
       // Get recent 5 students with their due amounts
-      const recentWithDue = students?.slice(0, 5).map(s => ({
-        ...s,
-        amountDue: Math.max(0, s.plan_amount - (paymentsByStudent[s.id] || 0))
-      })) || [];
+      const recentWithDue =
+        students?.slice(0, 5).map((s) => ({
+          ...s,
+          amountDue: Math.max(
+            0,
+            s.plan_amount - (paymentsByStudent[s.id] || 0)
+          ),
+        })) || [];
 
-      const allWithDue = students?.map(s => ({
-        ...s,
-        amountDue: Math.max(0, s.plan_amount - (paymentsByStudent[s.id] || 0))
-      })) || [];
+      const allWithDue =
+        students?.map((s) => ({
+          ...s,
+          amountDue: Math.max(
+            0,
+            s.plan_amount - (paymentsByStudent[s.id] || 0)
+          ),
+        })) || [];
 
-      const activeList = allWithDue.filter(s => s.current_status !== "completed");
-      const dueList = allWithDue.filter(s => (s.amountDue || 0) > 0);
-      const newWeekWithDue = newThisWeekList.map(s => ({
+      const activeList = allWithDue.filter(
+        (s) => s.current_status !== "completed"
+      );
+      const dueList = allWithDue.filter((s) => (s.amountDue || 0) > 0);
+      const newWeekWithDue = newThisWeekList.map((s) => ({
         ...s,
-        amountDue: Math.max(0, s.plan_amount - (paymentsByStudent[s.id] || 0))
+        amountDue: Math.max(0, s.plan_amount - (paymentsByStudent[s.id] || 0)),
       }));
 
       setRecentStudents(recentWithDue as any);
@@ -158,7 +171,6 @@ const Dashboard = () => {
   return (
     <AuthGuard>
       <div className="min-h-screen bg-background">
-
         <div className="container mx-auto px-4 py-6 space-y-6">
           {/* KPIs Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -167,7 +179,10 @@ const Dashboard = () => {
               value={kpis.totalStudents}
               icon={Users}
             />
-            <div onClick={() => setActiveModal(true)} className="cursor-pointer">
+            <div
+              onClick={() => setActiveModal(true)}
+              className="cursor-pointer"
+            >
               <KPICard
                 title="Active Students"
                 value={kpis.activeStudents}
@@ -182,13 +197,18 @@ const Dashboard = () => {
                 className="border-warning/20"
               />
             </div>
-            <KPICard
-              title="Revenue Collected"
-              value={`₹${kpis.revenueCollected.toLocaleString()}`}
-              icon={DollarSign}
-              className="border-success/20"
-            />
-            <div onClick={() => setNewThisWeekModal(true)} className="cursor-pointer">
+            {!superadminLoading && isSuperadmin && (
+              <KPICard
+                title="Revenue Collected"
+                value={`₹${kpis.revenueCollected.toLocaleString()}`}
+                icon={DollarSign}
+                className="border-success/20"
+              />
+            )}
+            <div
+              onClick={() => setNewThisWeekModal(true)}
+              className="cursor-pointer"
+            >
               <KPICard
                 title="New This Week"
                 value={kpis.newThisWeek}
@@ -200,8 +220,10 @@ const Dashboard = () => {
 
           {/* Recent Students Section */}
           <div className="space-y-4">
-          <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-foreground">Recently Added Students</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-foreground">
+                Recently Added Students
+              </h2>
               <Button onClick={() => navigate("/students")}>
                 <Users className="h-4 w-4 mr-2" />
                 View All Students
