@@ -16,12 +16,30 @@ interface StudentCardProps {
 }
 
 const statusConfig: Record<string, { label: string; className: string }> = {
-  not_started: { label: "Not Started", className: "bg-muted/50 text-muted-foreground" },
-  whatsapp_group_added: { label: "WhatsApp Added", className: "bg-blue-500/5 text-blue-400" },
-  course_completed: { label: "Course Done", className: "bg-purple-500/5 text-purple-400" },
-  website_completed: { label: "Website Done", className: "bg-amber-500/5 text-amber-400" },
-  selling_initiated: { label: "Selling", className: "bg-cyan-500/5 text-cyan-400" },
-  completed: { label: "Completed", className: "bg-emerald-500/5 text-emerald-400" },
+  not_started: {
+    label: "Not Started",
+    className: "bg-muted/50 text-muted-foreground",
+  },
+  whatsapp_group_added: {
+    label: "WhatsApp Added",
+    className: "bg-blue-500/5 text-blue-400",
+  },
+  course_completed: {
+    label: "Course Video Access Completed",
+    className: "bg-purple-500/5 text-purple-400",
+  },
+  website_completed: {
+    label: "Website Done",
+    className: "bg-amber-500/5 text-amber-400",
+  },
+  selling_initiated: {
+    label: "Selling",
+    className: "bg-cyan-500/5 text-cyan-400",
+  },
+  completed: {
+    label: "Completed",
+    className: "bg-emerald-500/5 text-emerald-400",
+  },
 };
 
 export const StudentCard = ({
@@ -43,7 +61,9 @@ export const StudentCard = ({
         <div className="space-y-3">
           <div className="flex items-start justify-between">
             <div>
-              <h3 className="font-semibold text-lg text-foreground">{fullName}</h3>
+              <h3 className="font-semibold text-lg text-foreground">
+                {fullName}
+              </h3>
               <p className="text-sm text-muted-foreground">{planName}</p>
             </div>
             <Badge className={statusInfo.className}>{statusInfo.label}</Badge>
@@ -71,7 +91,11 @@ export const StudentCard = ({
             </div>
             <div className="text-sm text-right">
               <p className="text-muted-foreground">Amount Due</p>
-              <p className={`font-semibold ${amountDue > 0 ? "text-warning" : "text-success"}`}>
+              <p
+                className={`font-semibold ${
+                  amountDue > 0 ? "text-warning" : "text-success"
+                }`}
+              >
                 ₹{amountDue.toLocaleString()}
               </p>
             </div>

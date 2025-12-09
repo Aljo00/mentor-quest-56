@@ -1,4 +1,9 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -31,13 +36,18 @@ const statusColors: Record<string, string> = {
 const statusLabels: Record<string, string> = {
   not_started: "Not Started",
   whatsapp_group_added: "WhatsApp Added",
-  course_completed: "Course Done",
+  course_completed: "Course Video Access Completed",
   website_completed: "Website Done",
   selling_initiated: "Selling",
   completed: "Completed",
 };
 
-export const StudentListModal = ({ open, onOpenChange, title, students }: StudentListModalProps) => {
+export const StudentListModal = ({
+  open,
+  onOpenChange,
+  title,
+  students,
+}: StudentListModalProps) => {
   const navigate = useNavigate();
 
   return (
@@ -49,7 +59,9 @@ export const StudentListModal = ({ open, onOpenChange, title, students }: Studen
         <ScrollArea className="max-h-[60vh]">
           <div className="space-y-2">
             {students.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">No students found</p>
+              <p className="text-center text-muted-foreground py-8">
+                No students found
+              </p>
             ) : (
               students.map((student) => (
                 <div
@@ -61,19 +73,31 @@ export const StudentListModal = ({ open, onOpenChange, title, students }: Studen
                   className="flex items-center justify-between p-4 rounded-lg border bg-card cursor-pointer transition-colors"
                 >
                   <div className="flex-1">
-                    <h3 className="font-medium text-foreground">{student.full_name}</h3>
-                    <p className="text-sm text-muted-foreground">{student.phone}</p>
-                    <p className="text-sm text-muted-foreground">{student.plan_name}</p>
+                    <h3 className="font-medium text-foreground">
+                      {student.full_name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      {student.phone}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {student.plan_name}
+                    </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <Badge className={statusColors[student.current_status] || "bg-muted"}>
-                      {statusLabels[student.current_status] || student.current_status}
+                    <Badge
+                      className={
+                        statusColors[student.current_status] || "bg-muted"
+                      }
+                    >
+                      {statusLabels[student.current_status] ||
+                        student.current_status}
                     </Badge>
-                    {student.amountDue !== undefined && student.amountDue > 0 && (
-                      <span className="text-sm font-medium text-warning">
-                        ₹{student.amountDue.toLocaleString()} due
-                      </span>
-                    )}
+                    {student.amountDue !== undefined &&
+                      student.amountDue > 0 && (
+                        <span className="text-sm font-medium text-warning">
+                          ₹{student.amountDue.toLocaleString()} due
+                        </span>
+                      )}
                   </div>
                 </div>
               ))

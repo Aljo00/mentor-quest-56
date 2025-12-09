@@ -6,7 +6,13 @@ import { Badge } from "@/components/ui/badge";
 import { AddStudentDialog } from "@/components/students/AddStudentDialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, Home, Download } from "lucide-react";
 
 interface Student {
@@ -31,7 +37,7 @@ const statusColors: Record<string, string> = {
 const statusLabels: Record<string, string> = {
   not_started: "Not Started",
   whatsapp_group_added: "Added to WhatsApp Group",
-  course_completed: "Course Completed",
+  course_completed: "Course Video Access Completed",
   website_completed: "Website Setup Completed",
   selling_initiated: "Selling Initiated",
   completed: "Completed",
@@ -51,7 +57,9 @@ export default function Students() {
     setLoading(true);
     const { data: studentsData, error } = await supabase
       .from("students")
-      .select("id, full_name, phone, plan_name, current_status, plan_amount, joining_date")
+      .select(
+        "id, full_name, phone, plan_name, current_status, plan_amount, joining_date"
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -65,8 +73,9 @@ export default function Students() {
       .from("payments")
       .select("student_id, amount");
 
-    const studentsWithDue = (studentsData || []).map(student => {
-      const studentPayments = paymentsData?.filter(p => p.student_id === student.id) || [];
+    const studentsWithDue = (studentsData || []).map((student) => {
+      const studentPayments =
+        paymentsData?.filter((p) => p.student_id === student.id) || [];
       const totalPaid = studentPayments.reduce((sum, p) => sum + p.amount, 0);
       const amountDue = student.plan_amount - totalPaid;
       return { ...student, amount_due: amountDue };
@@ -95,12 +104,14 @@ export default function Students() {
 
     // Plan filter
     if (planFilter !== "all") {
-      filtered = filtered.filter(student => student.plan_name === planFilter);
+      filtered = filtered.filter((student) => student.plan_name === planFilter);
     }
 
     // Status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter(student => student.current_status === statusFilter);
+      filtered = filtered.filter(
+        (student) => student.current_status === statusFilter
+      );
     }
 
     // Amount due filter
@@ -122,33 +133,33 @@ export default function Students() {
     );
   }
 
-  const handleExport = (format: 'csv' | 'json') => {
-    const dataToExport = filteredStudents.map(s => ({
+  const handleExport = (format: "csv" | "json") => {
+    const dataToExport = filteredStudents.map((s) => ({
       Name: s.full_name,
       Phone: s.phone,
       Plan: s.plan_name,
       Amount: s.plan_amount,
       Status: statusLabels[s.current_status],
-      'Joining Date': new Date(s.joining_date).toLocaleDateString()
+      "Joining Date": new Date(s.joining_date).toLocaleDateString(),
     }));
 
-    if (format === 'csv') {
-      const headers = Object.keys(dataToExport[0] || {}).join(',');
-      const rows = dataToExport.map(row => Object.values(row).join(','));
-      const csv = [headers, ...rows].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv' });
+    if (format === "csv") {
+      const headers = Object.keys(dataToExport[0] || {}).join(",");
+      const rows = dataToExport.map((row) => Object.values(row).join(","));
+      const csv = [headers, ...rows].join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `students_${new Date().toISOString().split('T')[0]}.csv`;
+      a.download = `students_${new Date().toISOString().split("T")[0]}.csv`;
       a.click();
     } else {
       const json = JSON.stringify(dataToExport, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
+      const blob = new Blob([json], { type: "application/json" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `students_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `students_${new Date().toISOString().split("T")[0]}.json`;
       a.click();
     }
   };
@@ -164,11 +175,19 @@ export default function Students() {
             <h1 className="text-2xl md:text-3xl font-bold">Students</h1>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-            <Button variant="outline" onClick={() => handleExport('csv')} className="flex-1 sm:flex-none">
+            <Button
+              variant="outline"
+              onClick={() => handleExport("csv")}
+              className="flex-1 sm:flex-none"
+            >
               <Download className="h-4 w-4 mr-2" />
               Export CSV
             </Button>
-            <Button variant="outline" onClick={() => handleExport('json')} className="flex-1 sm:flex-none">
+            <Button
+              variant="outline"
+              onClick={() => handleExport("json")}
+              className="flex-1 sm:flex-none"
+            >
               <Download className="h-4 w-4 mr-2" />
               Export JSON
             </Button>
@@ -208,10 +227,18 @@ export default function Students() {
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="not_started">Not Started</SelectItem>
-                <SelectItem value="whatsapp_group_added">Added to WhatsApp Group</SelectItem>
-                <SelectItem value="course_completed">Course Completed</SelectItem>
-                <SelectItem value="website_completed">Website Setup Completed</SelectItem>
-                <SelectItem value="selling_initiated">Selling Initiated</SelectItem>
+                <SelectItem value="whatsapp_group_added">
+                  Added to WhatsApp Group
+                </SelectItem>
+                <SelectItem value="course_completed">
+                  Course Video Access Completed
+                </SelectItem>
+                <SelectItem value="website_completed">
+                  Website Setup Completed
+                </SelectItem>
+                <SelectItem value="selling_initiated">
+                  Selling Initiated
+                </SelectItem>
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
@@ -239,8 +266,12 @@ export default function Students() {
               <CardContent className="space-y-2">
                 <p className="text-sm text-muted-foreground">{student.phone}</p>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{student.plan_name}</span>
-                  <span className="text-sm font-semibold">₹{student.plan_amount.toLocaleString()}</span>
+                  <span className="text-sm font-medium">
+                    {student.plan_name}
+                  </span>
+                  <span className="text-sm font-semibold">
+                    ₹{student.plan_amount.toLocaleString()}
+                  </span>
                 </div>
                 <Badge className={statusColors[student.current_status]}>
                   {statusLabels[student.current_status]}
@@ -256,7 +287,9 @@ export default function Students() {
         {filteredStudents.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
-              {searchTerm ? "No students found matching your search." : "No students yet. Add your first student to get started!"}
+              {searchTerm
+                ? "No students found matching your search."
+                : "No students yet. Add your first student to get started!"}
             </p>
           </div>
         )}
