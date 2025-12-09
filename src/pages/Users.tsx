@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Shield, Users as UsersIcon, Trash2, Plus, Copy, Check } from "lucide-react";
 
-type AppRole = "admin" | "support" | "superadmin";
+type AppRole = "admin"  | "superadmin";
 
 interface UserWithRole {
   user_id: string;
@@ -209,8 +209,6 @@ export default function Users() {
         return "default";
       case "admin":
         return "secondary";
-      case "support":
-        return "outline";
       default:
         return "outline";
     }
@@ -364,7 +362,6 @@ export default function Users() {
                           <SelectContent>
                             <SelectItem value="superadmin">Superadmin</SelectItem>
                             <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="support">Support</SelectItem>
                           </SelectContent>
                         </Select>
                         <AlertDialog>
